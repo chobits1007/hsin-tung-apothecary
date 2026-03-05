@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信東中藥行 | 百年漢方 傳承醫道</title>
+
+    <!-- Google Fonts: Noto Serif TC (Headings) & Noto Sans TC (Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                        serif: ['"Noto Serif TC"', 'serif'],
+                    },
+                    colors: {
+                        tcm: {
+                            bg: '#16120F',      // 沉香木 (帶有溫度的深褐墨色，取代純黑)
+                            paper: '#F2EBE5',   // 宣紙白 (主要文字)
+                            red: '#8C2121',     // 硃砂紅 (強調色)
+                            red_light: '#A32A2A',
+                            gold: '#B89B72',    // 檀木金 (裝飾色)
+                            wood: '#2A211B',    // 深木色 (卡片底色)
+                            border: '#3D3128',  // 邊框色
+                            text_muted: '#9E9387' // 溫潤副文字
+                        }
+                    },
+                    animation: {
+                        'marquee': 'marquee 30s linear infinite',
+                    },
+                    keyframes: {
+                        marquee: {
+                            '0%': { transform: 'translateX(0%)' },
+                            '100%': { transform: 'translateX(-100%)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Iconify -->
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+
+    <!-- GSAP Core & ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <style>
+        /* Global Styles & Resets */
+        body {
+            background-color: #16120F;
+            color: #F2EBE5;
+            overflow-x: hidden;
+            cursor: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Global Grain/Noise Texture */
+        .noise-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.08;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            mix-blend-mode: overlay;
+        }
+
+        /* Custom Cursor */
+        .cursor-dot {
+            position: fixed;
+            top: 0; left: 0;
+            width: 12px; height: 12px;
+            background-color: #B89B72;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: difference;
+            transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1), height 0.3s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s;
+        }
+        .cursor-dot.hover-active {
+            width: 60px; height: 60px;
+            background-color: #8C2121;
+        }
+
+        /* Vertical Reference Lines */
+        .grid-lines {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 0;
+            padding: 0 5vw;
+        }
+        .grid-line {
+            width: 1px;
+            height: 100%;
+            background: rgba(184, 155, 114, 0.05);
+        }
+
+        /* Traditional Border Card */
+        .glow-card {
+            position: relative;
+            background: linear-gradient(145deg, rgba(42, 33, 27, 0.4) 0%, rgba(15, 14, 13, 0.8) 100%);
+            border: 1px solid rgba(61, 49, 40, 0.5);
+            transition: border-color 0.5s ease, transform 0.5s ease;
+            backdrop-filter: blur(8px);
+        }
+        .glow-card:hover {
+            border-color: rgba(140, 33, 33, 0.6);
+            transform: translateY(-5px);
+        }
+
+        /* Image Masking */
+        .img-reveal {
+            clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+        }
+
+        /* Text Reveal Utilities */
+        .char-wrapper {
+            display: inline-block;
+            overflow: hidden;
+            vertical-align: top;
+        }
+        .char-inner {
+            display: inline-block;
+            transform: translateY(110%);
+        }
+
+        /* Vertical Text */
+        .vertical-text {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0F0E0D; }
+        ::-webkit-scrollbar-thumb { background: #2A211B; }
+        ::-webkit-scrollbar-thumb:hover { background: #8C2121; }
+    </style>
+</head>
+<body class="antialiased selection:bg-tcm-red selection:text-tcm-paper">
+
+    <!-- Global Elements -->
+    <div class="noise-bg"></div>
+    <div class="cursor-dot" id="cursor"></div>
+
+    <!-- Ambient Glow -->
+    <div class="fixed top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-tcm-red/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-tcm-gold/10 rounded-full blur-[150px] pointer-events-none z-0"></div>
+
+    <div class="grid-lines">
+        <div class="grid-line"></div>
+        <div class="grid-line hidden md:block"></div>
+        <div class="grid-line hidden md:block"></div>
+        <div class="grid-line"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 w-full z-40 px-6 py-6 md:px-12 flex justify-between items-center text-tcm-paper pointer-events-none transition-all duration-300" id="navbar">
+        <div class="font-serif text-2xl tracking-widest font-bold pointer-events-auto hover-target flex items-center gap-3">
+            <span class="text-tcm-red text-3xl">信東</span>
+            <div class="flex flex-col border-l border-tcm-gold/30 pl-3">
+                <span class="text-sm tracking-[0.2em] font-medium text-tcm-gold">百年漢方</span>
+                <span class="text-[0.6rem] tracking-widest text-tcm-text_muted">SINCE 1923</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-8 md:gap-12 pointer-events-auto">
+            <div class="hidden md:flex space-x-10 font-serif text-sm tracking-[0.2em]">
+                <a href="#values" class="hover-target hover:text-tcm-red transition-colors relative group">
+                    醫道傳承
+                    <span class="absolute -bottom-2 left-1/2 w-0 h-[1px] bg-tcm-red transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
+                </a>
+                <a href="#contact" class="hover-target hover:text-tcm-red transition-colors relative group">
+                    養生調劑
+                    <span class="absolute -bottom-2 left-1/2 w-0 h-[1px] bg-tcm-red transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
+                </a>
+            </div>
+
+            <button class="magnetic hover-target text-sm tracking-widest font-serif border border-tcm-gold/40 px-6 py-2 rounded-sm hover:bg-tcm-red hover:border-tcm-red hover:text-white transition-all duration-500">
+                漢方諮詢
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="relative z-10">
+
+        <!-- Hero Section -->
+        <section class="relative w-full h-screen flex flex-col justify-center items-center overflow-hidden px-6">
+            <div class="absolute inset-0 w-full h-full opacity-40">
+                <img src="https://images.unsplash.com/photo-1542841028-2b0e5138f292?q=80&w=2000&auto=format&fit=crop" alt="中藥材" class="w-full h-full object-cover scale-105 filter contrast-125 saturate-50 brightness-75" id="hero-bg">
+                <div class="absolute inset-0 bg-gradient-to-b from-tcm-bg/30 via-tcm-bg/80 to-tcm-bg"></div>
+            </div>
+
+            <div class="relative z-10 text-center flex flex-col items-center">
+
+                <div class="relative inline-block mt-8 mb-6">
+                    <div class="absolute -right-4 -bottom-4 md:-right-8 md:-bottom-4 z-0 reveal-fade opacity-0 pointer-events-none">
+                        <div class="w-20 h-20 md:w-32 md:h-32 border-[3px] md:border-[5px] border-tcm-red text-tcm-red flex items-center justify-center font-serif text-3xl md:text-5xl font-black transform rotate-[-15deg] opacity-70">
+                            信東
+                        </div>
+                    </div>
+
+                    <h1 class="relative z-10 text-6xl md:text-8xl lg:text-[9rem] font-serif font-black tracking-widest leading-tight title-reveal text-tcm-paper drop-shadow-2xl">
+                        信東中藥
+                    </h1>
+                </div>
+
+                <div class="flex items-center gap-4 reveal-fade opacity-0 mb-12">
+                    <span class="w-12 h-[1px] bg-tcm-gold/50"></span>
+                    <p class="text-xl md:text-2xl font-serif text-tcm-gold tracking-[0.3em]">
+                        道法自然 · 藥食同源
+                    </p>
+                    <span class="w-12 h-[1px] bg-tcm-gold/50"></span>
+                </div>
+
+                <p class="text-sm md:text-base font-sans text-tcm-text_muted tracking-[0.2em] max-w-xl leading-loose reveal-fade opacity-0">
+                    百年祖傳炮製工藝，堅持道地藥材。<br class="md:hidden">
+                    調理氣血，固本培元，找回身體最原始的和諧。
+                </p>
+
+                <div class="mt-16 reveal-fade opacity-0">
+                    <button class="magnetic hover-target bg-tcm-red text-tcm-paper px-10 py-4 font-serif tracking-widest text-base font-medium hover:bg-tcm-red_light transition-colors duration-300 flex items-center gap-4 border border-tcm-red_light/50">
+                        聯絡我們
+                        <iconify-icon icon="lucide:arrow-right" class="text-xl"></iconify-icon>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scroll Indicator -->
+            <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center reveal-fade opacity-0">
+                <span class="font-serif text-[0.6rem] text-tcm-gold tracking-[0.3em] mb-4 vertical-text">向下捲動</span>
+                <div class="w-[1px] h-16 bg-tcm-wood relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-full bg-tcm-red scroll-line"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Infinite Marquee -->
+        <section class="py-8 border-y border-tcm-border/50 bg-tcm-bg relative overflow-hidden">
+            <div class="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-tcm-bg to-transparent z-10 pointer-events-none"></div>
+            <div class="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-tcm-bg to-transparent z-10 pointer-events-none"></div>
+
+            <div class="flex whitespace-nowrap opacity-60 hover:opacity-100 transition-opacity duration-500 text-tcm-gold">
+                <div class="flex animate-marquee items-center gap-16 md:gap-32 px-8">
+                    <span class="flex items-center gap-4 font-serif tracking-[0.2em] text-lg"><iconify-icon icon="mingcute:yin-yang-line" class="text-3xl text-tcm-red"></iconify-icon> 陰陽五行</span>
+                    <span class="flex items-center gap-4 font-serif tracking-[0.2em] text-lg"><iconify-icon icon="solar:leaf-line-duotone" class="text-3xl text-tcm-red"></iconify-icon> 本草綱目</span>
+                    <span class="flex items-center gap-4 font-serif tracking-[0.2em] text-lg"><iconify-icon icon="lucide:soup" class="text-3xl text-tcm-red"></iconify-icon> 節氣調養</span>
+                    <span class="flex items-center gap-4 font-serif tracking-[0.2em] text-lg"><iconify-icon icon="icon-park-outline:medicine-chest" class="text-3xl text-tcm-red"></iconify-icon> 君臣佐使</span>
+                    <span class="flex items-center gap-4 font-serif tracking-[0.2em] text-lg"><iconify-icon icon="mdi:fire" class="text-3xl text-tcm-red"></iconify-icon> 古法炮製</span>
+                </div>
+                <div class="flex animate-marquee items-center gap-16 md:gap-32 px-8" aria-hidden="true">
+                    <span class="flex items-center gap-4 font-serif tracking-[0.2em] text-lg"><iconify-icon icon="mingcute:yin-yang-line" class="text-3xl text-tcm-red"></iconify-icon> 陰陽五行</span>
+                    <span class="flex items-center gap-4 font-serif tracking-[0.2em] text-lg"><iconify-icon icon="solar:leaf-line-duotone" class="text-3xl text-tcm-red"></iconify-icon> 本草綱目</span>
+                    <span class="flex items-center gap-4 font-serif tracking-[0.2em] text-lg"><iconify-icon icon="lucide:soup" class="text-3xl text-tcm-red"></iconify-icon> 節氣調養</span>
+                    <span class="flex items-center gap-4 font-serif tracking-[0.2em] text-lg"><iconify-icon icon="icon-park-outline:medicine-chest" class="text-3xl text-tcm-red"></iconify-icon> 君臣佐使</span>
+                    <span class="flex items-center gap-4 font-serif tracking-[0.2em] text-lg"><iconify-icon icon="mdi:fire" class="text-3xl text-tcm-red"></iconify-icon> 古法炮製</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Core Values Section -->
+        <section id="values" class="py-32 px-6 md:px-12 max-w-7xl mx-auto">
+            <div class="mb-24 md:flex justify-between items-end border-b border-tcm-wood pb-8">
+                <div>
+                    <span class="font-sans text-tcm-red text-sm tracking-[0.3em] mb-4 block">一脈相承 · 濟世救人</span>
+                    <h2 class="text-4xl md:text-5xl lg:text-6xl font-serif tracking-widest section-title text-tcm-paper">醫道同源</h2>
+                </div>
+                <p class="font-sans text-tcm-text_muted max-w-md mt-6 md:mt-0 text-sm leading-loose tracking-[0.1em] section-desc">
+                    我們恪守歷代醫家之古訓，融匯四氣五味之精髓。<br>不求速效，但求治本；為您調配最純粹的大地之恩。
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Value 1 -->
+                <div class="glow-card p-10 flex flex-col group hover-target value-card border-t-4 border-t-transparent hover:border-t-tcm-red">
+                    <div class="flex justify-between items-start mb-8">
+                        <div class="w-16 h-16 border border-tcm-border flex items-center justify-center text-tcm-gold group-hover:bg-tcm-red group-hover:text-white group-hover:border-tcm-red transition-all duration-500">
+                            <iconify-icon icon="icon-park-outline:traditional-chinese-medicine" class="text-3xl"></iconify-icon>
+                        </div>
+                        <span class="font-serif text-tcm-border text-5xl font-black group-hover:text-tcm-gold/20 transition-colors">壹</span>
+                    </div>
+                    <h3 class="text-2xl font-serif tracking-widest mb-4 text-tcm-paper">嚴選道地藥材</h3>
+                    <p class="font-sans text-tcm-text_muted text-sm leading-loose tracking-wider mb-8 flex-grow">
+                        非道地不取。尋訪名山大川，堅持採用產地正宗、順應節氣採收之上等本草，確保藥性濃郁、效用宏大。
+                    </p>
+                    <div class="w-full h-56 overflow-hidden mt-auto border border-tcm-border">
+                        <img src="https://images.unsplash.com/photo-1596431940176-7833cc265ba9?q=80&w=800&auto=format&fit=crop" alt="道地藥材" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 filter brightness-90 sepia-[.2]">
+                    </div>
+                </div>
+
+                <!-- Value 2 -->
+                <div class="glow-card p-10 flex flex-col group hover-target value-card md:translate-y-12 border-t-4 border-t-transparent hover:border-t-tcm-red">
+                    <div class="flex justify-between items-start mb-8">
+                        <div class="w-16 h-16 border border-tcm-border flex items-center justify-center text-tcm-gold group-hover:bg-tcm-red group-hover:text-white group-hover:border-tcm-red transition-all duration-500">
+                            <iconify-icon icon="game-icons:mortar" class="text-3xl"></iconify-icon>
+                        </div>
+                        <span class="font-serif text-tcm-border text-5xl font-black group-hover:text-tcm-gold/20 transition-colors">貳</span>
+                    </div>
+                    <h3 class="text-2xl font-serif tracking-widest mb-4 text-tcm-paper">遵古法炮製</h3>
+                    <p class="font-sans text-tcm-text_muted text-sm leading-loose tracking-wider mb-8 flex-grow">
+                        修合無人見，存心有天知。嚴守「九蒸九曬」、「蜜炙醋炒」等繁複古法，減其毒偏，增其療效，淬鍊溫潤良方。
+                    </p>
+                    <div class="w-full h-56 overflow-hidden mt-auto border border-tcm-border">
+                        <img src="https://images.unsplash.com/photo-1615554800122-297cce308bc6?q=80&w=800&auto=format&fit=crop" alt="古法炮製" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 filter grayscale group-hover:grayscale-0 sepia-[.3]">
+                    </div>
+                </div>
+
+                <!-- Value 3 -->
+                <div class="glow-card p-10 flex flex-col group hover-target value-card md:translate-y-24 border-t-4 border-t-transparent hover:border-t-tcm-red">
+                    <div class="flex justify-between items-start mb-8">
+                        <div class="w-16 h-16 border border-tcm-border flex items-center justify-center text-tcm-gold group-hover:bg-tcm-red group-hover:text-white group-hover:border-tcm-red transition-all duration-500">
+                            <iconify-icon icon="mdi:scale-balance" class="text-3xl"></iconify-icon>
+                        </div>
+                        <span class="font-serif text-tcm-border text-5xl font-black group-hover:text-tcm-gold/20 transition-colors">參</span>
+                    </div>
+                    <h3 class="text-2xl font-serif tracking-widest mb-4 text-tcm-paper">專業調劑</h3>
+                    <p class="font-sans text-tcm-text_muted text-sm leading-loose tracking-wider mb-8 flex-grow">
+                        依據專業處方精準秤藥調劑。另提供節氣養生藥膳與漢方茶飲，為您日常的氣血保養提供最契合的溫潤建議。
+                    </p>
+                    <div class="w-full h-56 overflow-hidden mt-auto border border-tcm-border">
+                        <img src="https://images.unsplash.com/photo-1576092762791-dd9e22201659?q=80&w=800&auto=format&fit=crop" alt="專業調劑" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 filter brightness-90 sepia-[.2]">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Large Image Parallax / Classic Quote -->
+        <section class="py-32 relative overflow-hidden">
+            <div class="max-w-7xl mx-auto px-6 md:px-12">
+                <div class="w-full h-[60vh] md:h-[80vh] overflow-hidden relative img-reveal-container border border-tcm-border p-2 bg-tcm-bg">
+                    <div class="relative w-full h-full overflow-hidden">
+                        <div class="absolute inset-0 z-10 bg-tcm-bg/60 flex items-center justify-center p-8 text-center backdrop-blur-[2px]">
+                            <div class="flex gap-4 items-center h-full">
+                                <p class="font-serif text-2xl md:text-5xl tracking-[0.5em] text-tcm-paper vertical-text h-3/4 leading-[2.5em]">
+                                    「上醫治未病，中醫治欲病，下醫治已病。」
+                                </p>
+                                <p class="font-serif text-sm md:text-xl text-tcm-red vertical-text mt-auto tracking-widest">
+                                    ——《黃帝內經》
+                                </p>
+                            </div>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1543725514-6ed155d315ee?q=80&w=2000&auto=format&fit=crop" alt="道法自然" class="w-full h-full object-cover parallax-img img-reveal filter contrast-125 grayscale-[50%]">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section id="contact" class="py-32 relative">
+            <div class="max-w-4xl mx-auto px-6 text-center">
+                <div class="flex justify-center mb-6">
+                    <iconify-icon icon="mingcute:flower-3-line" class="text-4xl text-tcm-gold"></iconify-icon>
+                </div>
+                <h2 class="text-4xl md:text-6xl font-serif tracking-widest mb-8 cta-title text-tcm-paper">專屬養生調劑</h2>
+                <p class="font-sans text-tcm-text_muted text-base tracking-[0.1em] mb-16 max-w-2xl mx-auto leading-loose">
+                    順應天時，調和陰陽。請親臨信東堂，讓我們以頂級道地藥材與專業調劑，為您的日常養生提供最溫潤的解答。
+                </p>
+                <div class="flex justify-center">
+                    <button class="magnetic hover-target group relative w-48 h-48 bg-transparent border-2 border-tcm-red rounded-full flex items-center justify-center overflow-hidden transition-colors hover:border-tcm-red_light duration-500">
+                        <div class="absolute inset-0 bg-tcm-red translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-out"></div>
+                        <span class="relative z-10 font-serif font-bold tracking-[0.3em] text-tcm-red group-hover:text-tcm-paper transition-colors duration-300 flex flex-col items-center gap-3 text-lg">
+                            聯絡我們
+                            <iconify-icon icon="lucide:arrow-up-right" class="text-2xl opacity-70"></iconify-icon>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-tcm-border pt-16 pb-8 relative z-10 bg-tcm-bg">
+        <div class="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div class="flex flex-col items-center md:items-start gap-2">
+                <span class="font-serif text-3xl tracking-widest font-bold text-tcm-paper">信東堂</span>
+                <span class="font-sans text-sm tracking-[0.3em] text-tcm-gold">傳統中醫藥行</span>
+            </div>
+
+            <div class="flex gap-8 font-sans text-sm tracking-wider text-tcm-text_muted">
+                <a href="#" class="hover-target hover:text-tcm-gold transition-colors">Line 諮詢</a>
+                <a href="#" class="hover-target hover:text-tcm-gold transition-colors">營業時間</a>
+                <a href="#" class="hover-target hover:text-tcm-gold transition-colors">交通指引</a>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-6 md:px-12 mt-12 flex flex-col md:flex-row justify-between items-center text-xs font-sans text-tcm-border tracking-wider border-t border-tcm-wood pt-6">
+            <p>&copy; 2026 信東堂 Hsin Tung Apothecary. 保留一切權利。</p>
+            <p class="mt-2 md:mt-0">傳承自 1923 年</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Navbar Scroll Effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('bg-tcm-bg/90', 'backdrop-blur-md', 'border-b', 'border-tcm-wood', 'py-4');
+                navbar.classList.remove('py-6');
+            } else {
+                navbar.classList.remove('bg-tcm-bg/90', 'backdrop-blur-md', 'border-b', 'border-tcm-wood', 'py-4');
+                navbar.classList.add('py-6');
+            }
+        });
+
+        // Custom Cursor
+        const cursor = document.getElementById('cursor');
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let cursorX = mouseX;
+        let cursorY = mouseY;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function renderCursor() {
+            cursorX += (mouseX - cursorX) * 0.2;
+            cursorY += (mouseY - cursorY) * 0.2;
+            cursor.style.transform = `translate(${cursorX}px, ${cursorY}px) translate(-50%, -50%)`;
+            requestAnimationFrame(renderCursor);
+        }
+        renderCursor();
+
+        const hoverTargets = document.querySelectorAll('.hover-target, a, button');
+        hoverTargets.forEach(target => {
+            target.addEventListener('mouseenter', () => cursor.classList.add('hover-active'));
+            target.addEventListener('mouseleave', () => cursor.classList.remove('hover-active'));
+        });
+
+        // Magnetic Button
+        const magnetics = document.querySelectorAll('.magnetic');
+        magnetics.forEach(btn => {
+            btn.addEventListener('mousemove', (e) => {
+                const rect = btn.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                gsap.to(btn, { x: x * 0.3, y: y * 0.3, duration: 0.6, ease: 'power3.out' });
+            });
+            btn.addEventListener('mouseleave', () => {
+                gsap.to(btn, { x: 0, y: 0, duration: 1, ease: 'elastic.out(1, 0.3)' });
+            });
+        });
+
+        // Text Reveal
+        function splitTextToChars(selector) {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+                const text = el.innerText;
+                el.innerHTML = '';
+                text.split('').forEach(char => {
+                    const outerSpan = document.createElement('span');
+                    outerSpan.className = 'char-wrapper';
+                    if (char === ' ') {
+                        outerSpan.innerHTML = '&nbsp;';
+                    } else {
+                        const innerSpan = document.createElement('span');
+                        innerSpan.innerText = char;
+                        innerSpan.className = 'char-inner';
+                        outerSpan.appendChild(innerSpan);
+                    }
+                    el.appendChild(outerSpan);
+                });
+            });
+        }
+
+        // Initial Load Animations
+        window.addEventListener('load', () => {
+            splitTextToChars('.title-reveal');
+
+            const tl = gsap.timeline();
+            tl.fromTo('#hero-bg',
+                { scale: 1.15, filter: 'contrast(125%) saturate(50%) brightness(50%)' },
+                { scale: 1.05, filter: 'contrast(125%) saturate(50%) brightness(75%)', duration: 2.5, ease: 'power3.out' },
+                0
+            )
+            .to('.title-reveal .char-inner', {
+                y: '0%', duration: 1.5, stagger: 0.1, ease: 'power4.out'
+            }, 0.2)
+            .to('.reveal-fade', {
+                opacity: 1, y: 0, duration: 1.2, stagger: 0.2, ease: 'power2.out'
+            }, 0.8)
+            .fromTo('.scroll-line',
+                { y: '-100%' },
+                { y: '100%', duration: 1.5, repeat: -1, ease: 'power2.inOut' },
+                1
+            );
+        });
+
+        // ScrollTrigger Animations
+        gsap.from('.section-title', {
+            scrollTrigger: { trigger: '#values', start: 'top 80%' },
+            y: 50, opacity: 0, duration: 1.5, ease: 'power3.out'
+        });
+
+        gsap.from('.section-desc', {
+            scrollTrigger: { trigger: '#values', start: 'top 80%' },
+            y: 30, opacity: 0, duration: 1.5, delay: 0.3, ease: 'power3.out'
+        });
+
+        gsap.from('.value-card', {
+            scrollTrigger: { trigger: '#values', start: 'top 60%' },
+            y: 100, opacity: 0, duration: 1.2, stagger: 0.2, ease: 'power4.out'
+        });
+
+        const imgRevealTl = gsap.timeline({
+            scrollTrigger: { trigger: '.img-reveal-container', start: 'top 80%' }
+        });
+        imgRevealTl.to('.img-reveal', {
+            clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)',
+            duration: 2, ease: 'power4.inOut'
+        });
+
+        gsap.fromTo('.parallax-img',
+            { y: '-15%', scale: 1.1 },
+            {
+                y: '15%', scale: 1, ease: 'none',
+                scrollTrigger: {
+                    trigger: '.img-reveal-container',
+                    start: 'top bottom', end: 'bottom top', scrub: true
+                }
+            }
+        );
+
+        splitTextToChars('.cta-title');
+        gsap.to('.cta-title .char-inner', {
+            scrollTrigger: { trigger: '#contact', start: 'top 75%' },
+            y: '0%', duration: 1.2, stagger: 0.1, ease: 'power4.out'
+        });
+    </script>
+</body>
+</html>
